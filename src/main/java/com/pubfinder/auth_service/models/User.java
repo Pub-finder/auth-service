@@ -20,8 +20,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ToString(exclude = { "visitedPubs", "reviews" })
-@EqualsAndHashCode(exclude = { "visitedPubs", "reviews" })
 public class User implements UserDetails {
 
   @Id
@@ -30,8 +28,7 @@ public class User implements UserDetails {
   private UUID id;
   @Column(unique = true, nullable = false)
   private String username;
-  private String firstname;
-  private String lastname;
+
   @Column(unique = true, nullable = false)
   private String email;
   @Column(nullable = false)
