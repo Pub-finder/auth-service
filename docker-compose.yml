@@ -1,0 +1,10 @@
+services:
+  database:
+    image: 'postgres:15.2'
+    ports:
+      - '15432:5432'
+    environment:
+      - 'POSTGRES_USER=admin'
+      - 'POSTGRES_DB=userservicedb'
+      - 'POSTGRES_PASSWORD=admin'
+      - 'POSTGRES_INITDB_ARGS=--encoding=UTF-8'
