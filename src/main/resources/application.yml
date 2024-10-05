@@ -24,9 +24,10 @@ spring:
 
 
 security:
-  api-header-name: "X-API-KEY"
-  api-key: ${API_KEY:key}
   jwt-secret: ${JWT_SECRET:5b8d21e3c97e73d229cb581e963697a3cb62def55327da16b374f28079cb223c}
   jwt-expiration-ms: ${JWT_EXPIRATION:3600000}
   jwt-refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}
-  cors-url: ${CORS_URL:http://localhost:3000}
+  cors-url: ${CORS_URL:*}
+
+server:
+  port: 8081
