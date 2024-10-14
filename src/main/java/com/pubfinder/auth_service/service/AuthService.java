@@ -131,6 +131,7 @@ public class AuthService {
         saveToken(user, accessToken);
 
         return AuthenticationResponse.builder()
+                .userId(user.getId())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
