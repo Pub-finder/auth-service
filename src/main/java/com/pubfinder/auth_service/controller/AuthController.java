@@ -6,6 +6,7 @@ import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.service.AuthService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,6 +46,7 @@ public class AuthController {
 
   @GetMapping("/generateToken/{userId}")
   public ResponseEntity<AuthenticationResponse> generateToken(@PathVariable("userId") UUID userId) throws ResourceNotFoundException {
-    return ResponseEntity.ok(authService.generateToken(userId));
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .body(authService.generateToken(userId));
   }
 }
