@@ -4,6 +4,7 @@ import com.pubfinder.auth_service.db.TokenRepository;
 import com.pubfinder.auth_service.db.UserRepository;
 import com.pubfinder.auth_service.dto.AuthenticationResponse;
 import com.pubfinder.auth_service.dto.LoginRequest;
+import com.pubfinder.auth_service.dto.TokenValidationResponse;
 import com.pubfinder.auth_service.exception.InvalidPasswordException;
 import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.models.Token;
@@ -50,11 +51,12 @@ public class AuthServiceTest {
 
         when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(tokenService.isTokenValid(token.getToken(), user.getId())).thenReturn(Boolean.TRUE);
+        when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.TRUE);
+        when(tokenService.isTokenExpired(token.getToken())).thenReturn(Boolean.TRUE);
 
-        Boolean result = authService.validateToken(token.getToken());
+        TokenValidationResponse result = authService.validateToken(token.getToken());
 
-        assertTrue(result);
+        assertEquals(result, TokenValidationResponse.VALID);
         verify(userRepository, times(1)).findById(user.getId());
     }
 
@@ -64,11 +66,26 @@ public class AuthServiceTest {
 
         when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(tokenService.isTokenValid(token.getToken(), user.getId())).thenReturn(Boolean.FALSE);
+        when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.FALSE);
 
-        Boolean result = authService.validateToken(token.getToken());
+        TokenValidationResponse result = authService.validateToken(token.getToken());
 
-        assertFalse(result);
+        assertEquals(result, TokenValidationResponse.INVALID);
+        verify(userRepository, times(1)).findById(user.getId());
+    }
+
+    @Test
+    public void validateTokenTest_ExpiredToken() throws ResourceNotFoundException {
+        Token token = TestUtil.generateMockToken(user);
+
+        when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.TRUE);
+        when(tokenService.isTokenExpired(token.getToken())).thenReturn(Boolean.TRUE);
+
+        TokenValidationResponse result = authService.validateToken(token.getToken());
+
+        assertEquals(result, TokenValidationResponse.EXPIRED);
         verify(userRepository, times(1)).findById(user.getId());
     }
 

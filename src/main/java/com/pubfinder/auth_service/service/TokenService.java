@@ -92,7 +92,12 @@ public class TokenService {
         }
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isIdValid(String token, UUID userId) {
+        final String id = extractUserId(token);
+        return userId.toString().equals(id);
+    }
+
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 

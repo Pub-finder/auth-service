@@ -4,6 +4,7 @@ import com.pubfinder.auth_service.db.TokenRepository;
 import com.pubfinder.auth_service.db.UserRepository;
 import com.pubfinder.auth_service.dto.AuthenticationResponse;
 import com.pubfinder.auth_service.dto.LoginRequest;
+import com.pubfinder.auth_service.dto.TokenValidationResponse;
 import com.pubfinder.auth_service.exception.InvalidPasswordException;
 import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.models.Token;
@@ -46,7 +47,7 @@ public class AuthService {
      * @return if the token is valid
      * @throws ResourceNotFoundException the user not found or the id in the token is invalid UUID exception
      */
-    public Boolean validateToken(String jwt)
+    public TokenValidationResponse validateToken(String jwt)
             throws ResourceNotFoundException {
         String id = tokenService.extractUserId(jwt);
 
@@ -62,10 +63,16 @@ public class AuthService {
                     "User with id: " + userId + " was not found")
             );
 
-            return tokenService.isTokenValid(jwt, userId);
+            if (!tokenService.isIdValid(jwt, userId)) {
+                return TokenValidationResponse.INVALID;
+            }
+
+            return !tokenService.isTokenExpired(jwt)
+                    ? TokenValidationResponse.VALID
+                    : TokenValidationResponse.EXPIRED;
         }
 
-        return false;
+        return TokenValidationResponse.INVALID;
     }
 
     /**
