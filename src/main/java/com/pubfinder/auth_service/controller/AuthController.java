@@ -2,6 +2,7 @@ package com.pubfinder.auth_service.controller;
 
 import com.pubfinder.auth_service.dto.AuthenticationResponse;
 import com.pubfinder.auth_service.dto.LoginRequest;
+import com.pubfinder.auth_service.dto.TokenValidationResponse;
 import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.service.AuthService;
 import org.apache.coyote.BadRequestException;
@@ -24,7 +25,7 @@ public class AuthController {
   private AuthService authService;
 
   @GetMapping(value = "/validateToken/{token}")
-  public ResponseEntity<Boolean> validateToken(@PathVariable("token") String token) throws ResourceNotFoundException {
+  public ResponseEntity<TokenValidationResponse> validateToken(@PathVariable("token") String token) throws ResourceNotFoundException {
     return ResponseEntity.ok(authService.validateToken(token));
   }
 

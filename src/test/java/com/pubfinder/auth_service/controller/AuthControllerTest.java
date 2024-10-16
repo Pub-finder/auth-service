@@ -3,6 +3,7 @@ package com.pubfinder.auth_service.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pubfinder.auth_service.dto.AuthenticationResponse;
 import com.pubfinder.auth_service.dto.LoginRequest;
+import com.pubfinder.auth_service.dto.TokenValidationResponse;
 import com.pubfinder.auth_service.models.Token;
 import com.pubfinder.auth_service.models.User;
 import com.pubfinder.auth_service.service.AuthService;
@@ -36,7 +37,7 @@ public class AuthControllerTest {
 
     @Test
     public void validateTokenTest() throws Exception {
-        when(authService.validateToken(any())).thenReturn(Boolean.TRUE);
+        when(authService.validateToken(any())).thenReturn(TokenValidationResponse.VALID);
         Token token = TestUtil.generateMockToken(user);
 
         mockMvc.perform(get("/auth/validateToken/{token}", token.getToken())
@@ -97,7 +98,7 @@ public class AuthControllerTest {
         mockMvc.perform(get("/auth/generateToken/{userId}", user.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authenticationResponse)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
 
