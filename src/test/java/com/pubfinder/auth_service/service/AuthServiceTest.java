@@ -52,7 +52,7 @@ public class AuthServiceTest {
         when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.TRUE);
-        when(tokenService.isTokenExpired(token.getToken())).thenReturn(Boolean.TRUE);
+        when(tokenService.isTokenExpired(token.getToken())).thenReturn(Boolean.FALSE);
 
         TokenValidationResponse result = authService.validateToken(token.getToken());
 
@@ -100,11 +100,13 @@ public class AuthServiceTest {
     }
 
     @Test
-    public void validateTokenTest_ResourceNotFoundException_InvalidUUID() {
+    public void validateTokenTest_ResourceNotFoundException_InvalidUUID() throws ResourceNotFoundException {
         Token token = TestUtil.generateMockToken(user);
 
         when(tokenService.extractUserId(token.getToken())).thenReturn("1234");
-        assertThrows(ResourceNotFoundException.class, () -> authService.validateToken(token.getToken()));
+        TokenValidationResponse response = authService.validateToken(token.getToken());
+
+        assertEquals(response, TokenValidationResponse.INVALID);
     }
 
     @Test

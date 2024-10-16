@@ -31,11 +31,7 @@ public class TokenService {
     private long REFRESHER_EXPIRATION;
 
     public String extractUserId(String jwt) {
-        try {
-            return extractClaim(jwt, Claims::getSubject);
-        } catch (ExpiredJwtException | MalformedJwtException | SignatureException e) {
-            return null;
-        }
+        return extractClaim(jwt, Claims::getSubject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -87,7 +83,7 @@ public class TokenService {
         try {
             final String id = extractUserId(token);
             return userId.toString().equals(id) && !isTokenExpired(token);
-        } catch (ExpiredJwtException e) {
+        } catch (MalformedJwtException | SignatureException | ExpiredJwtException e) {
             return false;
         }
     }

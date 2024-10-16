@@ -10,10 +10,12 @@ import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.models.Token;
 import com.pubfinder.auth_service.models.User;
 import com.pubfinder.auth_service.models.enums.TokenType;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -49,30 +51,31 @@ public class AuthService {
      */
     public TokenValidationResponse validateToken(String jwt)
             throws ResourceNotFoundException {
-        String id = tokenService.extractUserId(jwt);
-
-        if (id != null) {
-            UUID userId;
-            try {
+        try {
+            String id = tokenService.extractUserId(jwt);
+            if (id != null) {
+                UUID userId;
                 userId = UUID.fromString(id);
-            } catch (IllegalArgumentException e) {
-                throw new ResourceNotFoundException("Invalid user ID in token: " + id);
+
+                userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id: " + userId + " was not found")
+                );
+
+                if (!tokenService.isIdValid(jwt, userId)) {
+                    return TokenValidationResponse.INVALID;
+                }
+
+                // Not really need sense token expiration is checked in extractUserId()
+                return !tokenService.isTokenExpired(jwt)
+                        ? TokenValidationResponse.VALID
+                        : TokenValidationResponse.EXPIRED;
             }
-
-            userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException(
-                    "User with id: " + userId + " was not found")
-            );
-
-            if (!tokenService.isIdValid(jwt, userId)) {
-                return TokenValidationResponse.INVALID;
-            }
-
-            return !tokenService.isTokenExpired(jwt)
-                    ? TokenValidationResponse.VALID
-                    : TokenValidationResponse.EXPIRED;
+            return TokenValidationResponse.INVALID;
+        } catch (ExpiredJwtException e) {
+            return TokenValidationResponse.EXPIRED;
+        } catch (MalformedJwtException | SignatureException | IllegalArgumentException  e) {
+            return TokenValidationResponse.INVALID;
         }
-
-        return TokenValidationResponse.INVALID;
     }
 
     /**
