@@ -24,9 +24,9 @@ public class AuthController {
   @Autowired
   private AuthService authService;
 
-  @GetMapping(value = "/validateToken/{token}")
-  public ResponseEntity<TokenValidationResponse> validateToken(@PathVariable("token") String token) throws ResourceNotFoundException {
-    return ResponseEntity.ok(authService.validateToken(token));
+  @GetMapping(value = "/validateToken/{token}/{userId}")
+  public ResponseEntity<TokenValidationResponse> validateToken(@PathVariable("token") String token, @PathVariable("userId") UUID id) throws ResourceNotFoundException {
+    return ResponseEntity.ok(authService.validateToken(token, id));
   }
 
   @GetMapping("/refreshToken/{token}")
