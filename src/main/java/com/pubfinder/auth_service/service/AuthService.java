@@ -9,6 +9,7 @@ import com.pubfinder.auth_service.exception.InvalidPasswordException;
 import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.models.Token;
 import com.pubfinder.auth_service.models.User;
+import com.pubfinder.auth_service.models.enums.Role;
 import com.pubfinder.auth_service.models.enums.TokenType;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -49,31 +50,26 @@ public class AuthService {
      * @return if the token is valid
      * @throws ResourceNotFoundException the user not found or the id in the token is invalid UUID exception
      */
-    public TokenValidationResponse validateToken(String jwt)
+    public TokenValidationResponse validateToken(String jwt, UUID userId)
             throws ResourceNotFoundException {
         try {
             String id = tokenService.extractUserId(jwt);
-            if (id != null) {
-                UUID userId;
-                userId = UUID.fromString(id);
-
-                userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException(
-                        "User with id: " + userId + " was not found")
-                );
-
-                if (!tokenService.isIdValid(jwt, userId)) {
-                    return TokenValidationResponse.INVALID;
-                }
-
-                // Not really need sense token expiration is checked in extractUserId()
-                return !tokenService.isTokenExpired(jwt)
-                        ? TokenValidationResponse.VALID
-                        : TokenValidationResponse.EXPIRED;
+            if (id == null) {
+                return TokenValidationResponse.INVALID;
             }
-            return TokenValidationResponse.INVALID;
+
+            UUID tokenUserId = UUID.fromString(id);
+            User tokenUser = userRepository.findById(tokenUserId).orElseThrow(() -> new ResourceNotFoundException(
+                    "User with id: " + tokenUserId + " was not found")
+            );
+
+            if (!tokenService.isIdValid(jwt, tokenUserId) || (tokenUser.getId() != userId && !tokenUser.getRole().equals(Role.ADMIN)))
+                return TokenValidationResponse.INVALID;
+
+            return TokenValidationResponse.VALID;
         } catch (ExpiredJwtException e) {
             return TokenValidationResponse.EXPIRED;
-        } catch (MalformedJwtException | SignatureException | IllegalArgumentException  e) {
+        } catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
             return TokenValidationResponse.INVALID;
         }
     }

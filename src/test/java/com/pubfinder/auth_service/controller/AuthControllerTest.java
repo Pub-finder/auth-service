@@ -16,6 +16,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -37,10 +39,10 @@ public class AuthControllerTest {
 
     @Test
     public void validateTokenTest() throws Exception {
-        when(authService.validateToken(any())).thenReturn(TokenValidationResponse.VALID);
+        when(authService.validateToken(any(), any())).thenReturn(TokenValidationResponse.VALID);
         Token token = TestUtil.generateMockToken(user);
 
-        mockMvc.perform(get("/auth/validateToken/{token}", token.getToken())
+        mockMvc.perform(get("/auth/validateToken/{token}/{userId}", token.getToken(), UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
