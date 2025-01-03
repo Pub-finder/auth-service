@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: auth-service
+  datasource:
+    username: ${DB_USERNAME:admin}
+    url: jdbc:postgresql://${DB_URL:localhost:15432/userservicedb?charSet=UTF-8}
+    password: ${DB_PASSWORD:admin}
+    tomcat:
+      connection-properties: useUnicode=true;characterEncoding=utf8
+    sql-script-encoding: 'UTF-8'
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: 'false'
+    open-in-view: true
+    hibernate:
+      ddl-auto: update
+    show-sql: 'false'
+  http:
+    encoding:
+      charset: 'UTF-8'
+      force: true
+
+
+security:
+  jwt-secret: ${JWT_SECRET:secret}
+  jwt-expiration-ms: ${JWT_EXPIRATION:expiration}
+  jwt-refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:refresh}
+
+server:
+  port: 8081
