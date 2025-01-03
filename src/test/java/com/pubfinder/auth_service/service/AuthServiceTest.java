@@ -10,6 +10,7 @@ import com.pubfinder.auth_service.exception.ResourceNotFoundException;
 import com.pubfinder.auth_service.models.Token;
 import com.pubfinder.auth_service.models.User;
 import com.pubfinder.auth_service.util.TestUtil;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -47,14 +49,12 @@ public class AuthServiceTest {
 
     @Test
     public void validateTokenTest_ValidToken() throws ResourceNotFoundException {
-        Token token = TestUtil.generateMockToken(user);
-
         when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.TRUE);
         when(tokenService.isTokenExpired(token.getToken())).thenReturn(Boolean.FALSE);
 
-        TokenValidationResponse result = authService.validateToken(token.getToken());
+        TokenValidationResponse result = authService.validateToken(token.getToken(), user.getId());
 
         assertEquals(result, TokenValidationResponse.VALID);
         verify(userRepository, times(1)).findById(user.getId());
@@ -62,13 +62,11 @@ public class AuthServiceTest {
 
     @Test
     public void validateTokenTest_InvalidToken() throws ResourceNotFoundException {
-        Token token = TestUtil.generateMockToken(user);
-
         when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.FALSE);
 
-        TokenValidationResponse result = authService.validateToken(token.getToken());
+        TokenValidationResponse result = authService.validateToken(token.getToken(), UUID.randomUUID());
 
         assertEquals(result, TokenValidationResponse.INVALID);
         verify(userRepository, times(1)).findById(user.getId());
@@ -76,35 +74,24 @@ public class AuthServiceTest {
 
     @Test
     public void validateTokenTest_ExpiredToken() throws ResourceNotFoundException {
-        Token token = TestUtil.generateMockToken(user);
+        when(tokenService.extractUserId(token.getToken())).thenThrow(ExpiredJwtException.class);
 
-        when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(tokenService.isIdValid(token.getToken(), user.getId())).thenReturn(Boolean.TRUE);
-        when(tokenService.isTokenExpired(token.getToken())).thenReturn(Boolean.TRUE);
-
-        TokenValidationResponse result = authService.validateToken(token.getToken());
-
+        TokenValidationResponse result = authService.validateToken(token.getToken(), user.getId());
         assertEquals(result, TokenValidationResponse.EXPIRED);
-        verify(userRepository, times(1)).findById(user.getId());
     }
 
     @Test
     public void validateTokenTest_ResourceNotFoundException() {
-        Token token = TestUtil.generateMockToken(user);
-
         when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> authService.validateToken(token.getToken()));
+        assertThrows(ResourceNotFoundException.class, () -> authService.validateToken(token.getToken(), UUID.randomUUID()));
         verify(userRepository, times(1)).findById(user.getId());
     }
 
     @Test
     public void validateTokenTest_ResourceNotFoundException_InvalidUUID() throws ResourceNotFoundException {
-        Token token = TestUtil.generateMockToken(user);
-
         when(tokenService.extractUserId(token.getToken())).thenReturn("1234");
-        TokenValidationResponse response = authService.validateToken(token.getToken());
+        TokenValidationResponse response = authService.validateToken(token.getToken(), UUID.randomUUID());
 
         assertEquals(response, TokenValidationResponse.INVALID);
     }
@@ -133,30 +120,24 @@ public class AuthServiceTest {
 
     @Test
     public void refreshTokenTest_UserIdNotFound() {
-        Token refreshToken = TestUtil.generateMockToken(user);
-
-        when(tokenService.extractUserId(refreshToken.getToken())).thenReturn(null);
-        assertThrows(ResourceNotFoundException.class, () -> authService.refreshToken(refreshToken.getToken()));
+        when(tokenService.extractUserId(token.getToken())).thenReturn(null);
+        assertThrows(ResourceNotFoundException.class, () -> authService.refreshToken(token.getToken()));
     }
 
     @Test
     public void refreshTokenTest_UserNotFound() {
-        Token refreshToken = TestUtil.generateMockToken(user);
-
-        when(tokenService.extractUserId(refreshToken.getToken())).thenReturn(user.getId().toString());
+        when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> authService.refreshToken(refreshToken.getToken()));
+        assertThrows(ResourceNotFoundException.class, () -> authService.refreshToken(token.getToken()));
     }
 
     @Test
     public void refreshTokenTest_InvalidToken() {
-        Token refreshToken = TestUtil.generateMockToken(user);
-
-        when(tokenService.extractUserId(refreshToken.getToken())).thenReturn(user.getId().toString());
+        when(tokenService.extractUserId(token.getToken())).thenReturn(user.getId().toString());
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(tokenService.isTokenValid(refreshToken.getToken(), user.getId())).thenReturn(Boolean.FALSE);
+        when(tokenService.isTokenValid(token.getToken(), user.getId())).thenReturn(Boolean.FALSE);
 
-        assertThrows(BadCredentialsException.class, () -> authService.refreshToken(refreshToken.getToken()));
+        assertThrows(BadCredentialsException.class, () -> authService.refreshToken(token.getToken()));
     }
 
     @Test
@@ -221,4 +202,5 @@ public class AuthServiceTest {
     }
 
     private final User user = TestUtil.generateMockUser();
+    private final Token token = TestUtil.generateMockToken(user);
 }
